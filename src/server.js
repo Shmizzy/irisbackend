@@ -6,8 +6,8 @@ const ArtGenerator = require('./utils/ArtGenerator').default;
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
-  await connectProducer(); 
-  runConsumer().catch(console.error); 
+  await connectProducer();
+  runConsumer().catch(console.error);
 
   const artGenerator = new ArtGenerator();
   await artGenerator.initialize();

@@ -16,7 +16,6 @@ const runConsumer = async () => {
         offset: message.offset,
         value: event,
       });
-      // Process event (e.g., save to MongoDB)
     },
   });
 };
