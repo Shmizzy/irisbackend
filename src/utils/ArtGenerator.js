@@ -208,6 +208,7 @@ class ArtGenerator {
 
     try {
       await sendEvent('state_update', state);
+      console.log('📡 State broadcasted to kafka successfully');
     } catch (error) {
       console.error('Error broadcasting state:', error);
     }
