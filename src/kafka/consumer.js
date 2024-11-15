@@ -1,6 +1,8 @@
 const { Kafka } = require('kafkajs');
 const config = require('./config');
 const State = require('../models/State');
+const { broadcast } = require('../routes/stream');
+
 
 const kafka = new Kafka(config.kafka);
 const consumer = kafka.consumer({ groupId: 'backend-group' });
@@ -20,7 +22,7 @@ const handleStateUpdate = async (event) => {
       },
       { upsert: true, new: true }
     );
-    
+    broadcast(event);
     console.log('✅ State saved to MongoDB:', {
       status: state.currentStatus,
       phase: state.currentPhase,

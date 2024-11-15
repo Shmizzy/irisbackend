@@ -93,6 +93,22 @@ class ArtGenerator {
     this._updateStatus("drawing", "creation");
     const instructions = await aiService.generateDrawingInstructions(this.currentIdea);
     await this.broadcastInstructions(instructions);
+
+    for (const element of instructions.elements) {
+      for (const point of element.points) {
+        await sendEvent('drawing_progress', {
+          type: 'drawing_progress',
+          elementType: element.type,
+          point,
+          color: element.color,
+          strokeWidth: element.stroke_width
+        });
+        // Small delay for visual effect
+        await new Promise(r => setTimeout(r, 50));
+      }
+    }
+    
+    await this.broadcastInstructions(instructions);
     
     // Reflection Phase
     this._updateStatus("reflecting", "reflection");
