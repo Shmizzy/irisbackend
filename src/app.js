@@ -12,6 +12,6 @@ app.use(express.json());
 
 app.use('/api/artworks', artworkRoutes);
 app.use('/api/state', stateRoutes);
-api.use('/api/stream', streamRoutes.router);
+app.use('/api/stream', streamRoutes.router);
 
 module.exports = app;
