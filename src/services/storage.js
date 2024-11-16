@@ -41,28 +41,30 @@ class StorageService {
         console.log(`   Total Pixels: ${totalPixels[0]?.totalPixels || 0}`);
     }
 
-    async saveArtwork({ drawingInstructions, description, reflection }) {
+    async saveArtwork({ drawingInstructions, description, reflection, imageUrl }) {
         console.log('\n=== Saving Artwork ===');
         console.log('📝 Drawing Instructions:', drawingInstructions ? 'Present' : 'Missing');
     
         try {
-            const pixelCount = this._calculatePixelCount(drawingInstructions);
+          const pixelCount = this._calculatePixelCount(drawingInstructions);
     
-            const artwork = new Artwork({
-                drawingInstructions, // This will now save correctly
-                description,
-                reflection,
-                pixelCount,
-                complexity: this._calculateComplexity(drawingInstructions)
-            });
+          const artwork = new Artwork({
+            drawingInstructions,
+            description,
+            reflection,
+            imageUrl, // Ensure imageUrl is saved here
+            pixelCount,
+            complexity: this._calculateComplexity(drawingInstructions)
+          });
     
-            await artwork.save();
-            // ... rest of the code
+          await artwork.save();
+          console.log(`✅ Artwork saved successfully! ID: ${artwork.id}`);
+          return { artwork, stats: await this.getStats() };
         } catch (error) {
-            console.error('❌ Error saving artwork:', error);
-            throw new Error(`Failed to save artwork: ${error.message}`);
+          console.error('❌ Error saving artwork:', error);
+          throw new Error(`Failed to save artwork: ${error.message}`);
         }
-    }
+      }
     async getStats() {
         try {
             const stats = await Stats.findOne({ id: 'global' });

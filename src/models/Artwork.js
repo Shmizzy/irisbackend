@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 const artworkSchema = new mongoose.Schema({
-    imageUrl: { type: String, required: true },
+    imageUrl: String,
     description: String,
     reflection: String,
     drawingInstructions: { type: mongoose.Schema.Types.Mixed, default: {} },
