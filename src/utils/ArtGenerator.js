@@ -11,6 +11,7 @@ class ArtGenerator {
     this._initializeState();
     this._initializeCache();
     this._initializeRateLimiting();
+    this.isProcessing = false;
     this.initialize();
   }
 
@@ -71,9 +72,12 @@ class ArtGenerator {
   }
 
   async generateNewArtwork() {
-    if (this._isCircuitBreakerOpen()) {
-      throw new Error('Circuit breaker is open');
+    if (this._isCircuitBreakerOpen() || this.isProcessing) {
+      console.warn('Circuit breaker is open or already processing an artwork');
+      return;
     }
+
+    this.isProcessing = true;
 
     try {
       await this._generateArtworkPhases();
@@ -82,6 +86,8 @@ class ArtGenerator {
     } catch (error) {
       this._handleGenerationError(error);
       throw error;
+    }finally {
+      this.isProcessing = false;
     }
   }
 
@@ -104,7 +110,7 @@ class ArtGenerator {
     await this.broadcastReflection(this.currentReflection);
   }
 
-  async _saveAndCacheArtwork(imageUrl) {
+  async saveAndCacheArtwork(imageUrl) {
     try {
       this._updateStatus("saving", "storage");
       console.log('💾 Starting artwork storage process...');
@@ -113,24 +119,27 @@ class ArtGenerator {
         throw new Error('No drawing instructions available');
       }
 
+      // Save to database and get updated stats
       console.log('🗄️ Saving to database...');
       const { artwork: savedArtwork, stats } = await storageService.saveArtwork({
         drawingInstructions: this.currentDrawing.instructions,
         description: this.currentIdea,
         reflection: this.currentReflection,
-        imageUrl
+        imageUrl // Add the image URL
       });
 
+      // Update local stats
       this.totalCreations = stats.totalCreations;
       this.totalPixelsDrawn = stats.totalPixels;
 
+      // Cache the artwork
       const artworkId = `artwork_${Date.now()}`;
       this.cache.set(artworkId, {
         id: savedArtwork.id,
         idea: this.currentIdea,
         reflection: this.currentReflection,
         instructions: this.currentDrawing.instructions,
-        imageUrl
+        imageUrl // Include image URL in cache
       });
 
       console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
@@ -314,6 +323,4 @@ class ArtGenerator {
   }
 }
 
-module.exports = {
-  default: ArtGenerator
-};
+module.exports = new ArtGenerator(); // Ensure the correct export

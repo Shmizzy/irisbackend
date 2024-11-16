@@ -14,4 +14,15 @@ router.post('/save-image', async (req, res) => {
   }
 });
 
+router.post('/artwork-complete', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    await artGenerator._saveAndCacheArtwork(imageUrl);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error completing artwork:', error);
+    res.status(500).json({ error: 'Failed to complete artwork' });
+  }
+});
+
 module.exports = router;
