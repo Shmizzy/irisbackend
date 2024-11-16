@@ -7,7 +7,16 @@ const stateSchema = new mongoose.Schema({
     currentReflection: String,
     totalCreations: { type: Number, default: 0 },
     totalPixelsDrawn: { type: Number, default: 0 },
-    viewers: { type: Number, default: 0 },
+    viewers: { 
+        type: Number, 
+        default: 0,
+        min: 0 
+    },
+    activeConnections: { 
+        type: Map,
+        of: Date,
+        default: new Map()
+    },
     lastGenerationTime: { type: Date, default: Date.now },
 });
 

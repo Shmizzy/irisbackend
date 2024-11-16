@@ -5,7 +5,7 @@ const { sendEvent } = require('../kafka/producer');
 
 class ArtGenerator {
   constructor() {
-    console.log('🎨 Initializing IRIS Art Generator...');
+    console.log('🎨 Initializing Zenith Art Generator...');
     this._initializeState();
     this._initializeCache();
     this._initializeRateLimiting();
@@ -13,7 +13,6 @@ class ArtGenerator {
   }
 
   _initializeState() {
-    this.viewers = new Set();
     this.currentDrawing = null;
     this.currentState = [];
     this.currentStatus = "initializing";
@@ -50,7 +49,7 @@ class ArtGenerator {
   }
 
   async initialize() {
-    console.log('\n=== IRIS Initialization ===');
+    console.log('\n=== Zenith Initialization ===');
     try {
       const stats = await storageService.getStats();
       this.totalCreations = stats.totalCreations;
@@ -63,7 +62,7 @@ class ArtGenerator {
       await this.generateNewArtwork();
       this.startGenerationLoop();
       
-      console.log('✅ IRIS initialization complete\n');
+      console.log('✅ Zenith initialization complete\n');
     } catch (error) {
       console.error('❌ Initialization error:', error);
     }
@@ -214,17 +213,16 @@ class ArtGenerator {
       idea: this.currentIdea,
       total_creations: this.totalCreations,
       total_pixels: this.totalPixelsDrawn,
-      viewers: this.viewers.size,
       generation_time: Math.floor((new Date() - this.lastGenerationTime) / 1000),
       last_saved: this.cache.get(`artwork_${Date.now()}`)?.id
     };
 
-    const message = JSON.stringify(state);
-    console.log('📤 Broadcasting state:', JSON.stringify(state, null, 2));
-
     try {
+      // Send to Kafka
       await sendEvent('state_update', state);
-      console.log('📡 State broadcasted to kafka successfully');
+      // Broadcast to SSE clients
+      broadcast(state);
+      console.log('📡 State broadcasted successfully');
     } catch (error) {
       console.error('Error broadcasting state:', error);
     }
@@ -233,70 +231,43 @@ class ArtGenerator {
   async broadcastInstructions(instructions) {
     console.log('📢 Broadcasting drawing instructions');
     
-    // Store the current drawing instructions
     this.currentDrawing = {
       instructions,
       timestamp: Date.now()
     };
 
-    const message = JSON.stringify({
+    const message = {
       type: 'drawing_instructions',
       instructions
-    });
+    };
 
-    for (const viewer of this.viewers) {
-      try {
-        viewer.send(message);
-      } catch (error) {
-        console.error('Error broadcasting instructions:', error);
-        this.viewers.delete(viewer);
-      }
+    try {
+      await sendEvent('drawing_instructions', message);
+      broadcast(message);
+
+      console.log('📡Drawing Instructions brodcasted successfully');
+    } catch (error) {
+      console.error('Error broadcasting instructions:', error);
     }
   }
 
   async broadcastReflection(reflection) {
     console.log('📢 Broadcasting reflection');
-    const message = JSON.stringify({
+    const message = {
       type: 'reflection',
       reflection
-    });
+    };
 
-    for (const viewer of this.viewers) {
-      try {
-        viewer.send(message);
-      } catch (error) {
-        console.error('Error broadcasting reflection:', error);
-        this.viewers.delete(viewer);
-      }
+    try {
+      await sendEvent('reflection', message);
+      broadcast(message);
+
+      console.log('📡 Reflection brodcasted successfully');
+    } catch (error) {
+      console.error('Error broadcasting reflection:', error);
     }
   }
-
-  addViewer(ws) {
-    // Check rate limit
-    const ip = ws._socket.remoteAddress;
-    const now = Date.now();
-    const recentRequests = this.rateLimits.get(ip) || [];
-    const recentCount = recentRequests.filter(time => now - time < 60000).length;
-
-    if (recentCount >= this.maxRequestsPerMinute) {
-      ws.send(JSON.stringify({
-        type: 'error',
-        message: 'Rate limit exceeded'
-      }));
-      return;
-    }
-
-    recentRequests.push(now);
-    this.rateLimits.set(ip, recentRequests);
-
-    // Add viewer
-    this.viewers.add(ws);
-    
-    // Send cached state
-    this.sendCachedState(ws);
-    
-    console.log(`👥 Total viewers: ${this.viewers.size}`);
-  }
+  
 
   async sendCachedState(ws) {
     try {
@@ -335,6 +306,8 @@ class ArtGenerator {
 
     try {
       await sendEvent('pending_updates', message);
+      broadcast(message);
+      console.log('📡 pending updates brodcasted successfully');
     } catch (error) {
       console.error('Error broadcasting pending updates:', error);
     }
@@ -344,11 +317,6 @@ class ArtGenerator {
     this.pendingUpdates.add(update);
   }
 
-  removeViewer(ws) {
-    console.log('👋 Viewer disconnected');
-    this.viewers.delete(ws);
-    console.log(`👥 Total viewers: ${this.viewers.size}`);
-  }
 
   cleanup() {
     clearInterval(this.updateInterval);

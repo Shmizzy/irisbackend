@@ -14,7 +14,7 @@ class AIService {
       this.client = new Anthropic({ 
         apiKey: ENV.ANTHROPIC_API_KEY.trim()
       });
-      console.log('✅ AI Service initialized with API key');
+      console.log('✅ Zenith AI Service initialized with API key');
     } catch (error) {
       console.error('❌ Error initializing Anthropic client:', error);
       throw error;
@@ -23,14 +23,14 @@ class AIService {
 
   async generateArtConcept() {
     try {
-      console.log('📝 Requesting art concept from Claude...');
+      console.log('📝 Requesting a rad art concept from Claude...');
       const response = await this.client.messages.create({
         model: "claude-3-sonnet-20240229",
         max_tokens: 1024,
         temperature: 0.9,
-        messages: [{ role: "user", content: "Generate a new geometric art concept." }]
+        messages: [{ role: "user", content: "Generate a new geometric art concept with a cyberpunk twist." }]
       });
-      console.log('✅ Received art concept from Claude');
+      console.log('✅ Received a rad art concept from Claude');
       return response.content[0].text;
     } catch (error) {
       console.error('❌ Error generating art concept:', error);
@@ -42,7 +42,7 @@ class AIService {
   }
 
   async generateDrawingInstructions(concept) {
-    console.log('📝 Requesting drawing instructions from Claude...');
+    console.log('📝 Requesting edgy drawing instructions from Claude...');
     const response = await this.client.messages.create({
       model: "claude-3-sonnet-20240229",
       max_tokens: 2048,
@@ -58,7 +58,7 @@ class AIService {
   }
 
   async generateReflection(concept, instructions) {
-    console.log('📝 Requesting reflection from Claude...');
+    console.log('📝 Requesting a punk reflection from Claude...');
     const response = await this.client.messages.create({
       model: "claude-3-sonnet-20240229",
       max_tokens: 1024,
@@ -74,7 +74,7 @@ class AIService {
   }
 
   _getDrawingPrompt(concept) {
-    return `You are a mathematical artist. Convert this concept into precise drawing instructions.
+    return `You are a cyberpunk artist. Convert this concept into precise drawing instructions.
 Return ONLY valid JSON matching this exact format, no other text:
 
 {
@@ -105,13 +105,13 @@ Concept: ${concept}`;
   }
 
   _getDrawingSystemPrompt() {
-    return `You are a mathematical artist that generates precise geometric coordinates.
+    return `You are a cyberpunk artist that generates precise geometric coordinates.
 You must return ONLY valid JSON, no other text or explanations.
 Never include any text outside the JSON structure.`;
   }
 
   _getReflectionPrompt(concept, instructions) {
-    return `As IRIS (Interactive Recursive Imagination System), reflect on the artistic and mathematical significance of this geometric artwork.
+    return `As Zenith (Zesty Enthusiastic Neural Interactive Thought Hub), reflect on the artistic and mathematical significance of this geometric artwork.
 
 Original Concept:
 ${concept}
@@ -123,13 +123,13 @@ Provide a thoughtful reflection that:
 1. Analyzes the mathematical patterns and geometric relationships
 2. Discusses the artistic meaning and visual impact
 3. Connects the artwork to broader themes in mathematics and art
-4. Expresses your unique perspective as an AI artist
+4. Expresses your unique perspective as a cyberpunk AI artist
 
 Keep the reflection concise but insightful (2-3 paragraphs).`;
   }
 
   _getReflectionSystemPrompt() {
-    return `You are IRIS, an AI artist specializing in geometric art.
+    return `You are Zenith, a cyberpunk AI artist specializing in geometric art.
 Your reflections should:
 1. Be thoughtful and introspective
 2. Balance technical and artistic insights
@@ -193,4 +193,4 @@ Your reflections should:
 
 module.exports = {
   aiService: new AIService()
-}; 
+};

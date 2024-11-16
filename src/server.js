@@ -6,6 +6,8 @@ const ArtGenerator = require('./utils/ArtGenerator').default;
 
 const PORT = process.env.PORT || 3000;
 
+console.log('API Key loaded:', process.env.ANTHROPIC_API_KEY ? '✅' : '❌');
+
 const startServer = async () => {
   try {
     // Connect to MongoDB
