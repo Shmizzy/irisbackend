@@ -3,91 +3,80 @@ const express = require('express');
 const router = express.Router();
 const State = require('../models/State');
 
-const clients = new Set();
-let heartbeatInterval;
+const activeConnections = new Map(); // Use Map to store connection IDs and timestamps
 
 router.get('/events', async (req, res) => {
-  // Set headers for SSE
+  const connectionId = Date.now().toString();
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive'
   });
 
-  // Add client to active connections
-  clients.add(res);
-  console.log(`👥 Client connected. Total viewers: ${clients.size}`);
-  await updateViewerCount();
-
-  // Send heartbeat every 30s to keep connection alive
-  const clientHeartbeat = setInterval(() => {
-    res.write(':\n\n'); // SSE comment for heartbeat
-  }, 30000);
-
-  // Handle client disconnect
-  req.on('close', async () => {
-    clients.delete(res);
-    clearInterval(clientHeartbeat);
-    console.log(`👋 Client disconnected. Total viewers: ${clients.size}`);
-    await updateViewerCount();
+  // Add connection with timestamp
+  activeConnections.set(connectionId, {
+    res,
+    timestamp: Date.now(),
+    heartbeat: setInterval(() => {
+      res.write(':\n\n'); // Heartbeat
+    }, 30000)
   });
 
-  // Handle connection timeout
-  req.on('end', async () => {
-    clients.delete(res);
-    clearInterval(clientHeartbeat);
-    await updateViewerCount();
-  });
+  console.log(`👥 New connection ${connectionId}. Total: ${activeConnections.size}`);
+  broadcastViewerCount();
 
-  // Handle errors
-  req.on('error', async (error) => {
-    console.error('SSE Client error:', error);
-    clients.delete(res);
-    clearInterval(clientHeartbeat);
-    await updateViewerCount();
+  req.on('close', () => {
+    const connection = activeConnections.get(connectionId);
+    if (connection) {
+      clearInterval(connection.heartbeat);
+      activeConnections.delete(connectionId);
+      console.log(`👋 Connection closed ${connectionId}. Total: ${activeConnections.size}`);
+      broadcastViewerCount();
+    }
   });
 });
 
-async function updateViewerCount() {
-  const viewerCount = clients.size;
+function broadcastViewerCount() {
+  const count = activeConnections.size;
+  const message = JSON.stringify({ type: 'viewer_count', count });
   
-  try {
-    // Update state in database
-    await State.findOneAndUpdate(
-      { currentStatus: { $exists: true } },
-      { viewers: viewerCount },
-      { upsert: true }
-    );
-
-    broadcast({
-      type: 'viewer_count',
-      count: viewerCount
-    });
-  } catch (error) {
-    console.error('Error updating viewer count:', error);
+  // Clean up stale connections while broadcasting
+  for (const [id, connection] of activeConnections.entries()) {
+    try {
+      connection.res.write(`data: ${message}\n\n`);
+    } catch (error) {
+      console.log(`Removing stale connection ${id}`);
+      clearInterval(connection.heartbeat);
+      activeConnections.delete(id);
+    }
   }
 }
 
-// Function to broadcast to all clients
-const broadcast = (event) => {
-  clients.forEach(client => {
+function broadcast(event) {
+  const message = JSON.stringify(event);
+  for (const [id, connection] of activeConnections.entries()) {
     try {
-      client.write(`data: ${JSON.stringify(event)}\n\n`);
+      connection.res.write(`data: ${message}\n\n`);
     } catch (error) {
-      console.error('Error broadcasting to client:', error);
-      clients.delete(client);
+      console.log(`Failed to send to ${id}, removing connection`);
+      clearInterval(connection.heartbeat);
+      activeConnections.delete(id);
     }
-  });
-};
+  }
+}
 
-// Cleanup stale connections periodically
+// Cleanup stale connections every minute
 setInterval(() => {
-  clients.forEach(client => {
-    if (!client.writable) {
-      clients.delete(client);
-      updateViewerCount();
+  const now = Date.now();
+  for (const [id, connection] of activeConnections.entries()) {
+    if (now - connection.timestamp > 120000) { // 2 minutes timeout
+      console.log(`Removing inactive connection ${id}`);
+      clearInterval(connection.heartbeat);
+      activeConnections.delete(id);
     }
-  });
-}, 30000);
+  }
+  broadcastViewerCount();
+}, 60000);
 
 module.exports = { router, broadcast };
