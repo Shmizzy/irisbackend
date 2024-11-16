@@ -2,7 +2,7 @@ const app = require('./app');
 const mongoose = require('mongoose');
 const { connectProducer } = require('./kafka/producer');
 const { runConsumer } = require('./kafka/consumer');
-const ArtGenerator = require('./utils/ArtGenerator').default;
+const ArtGenerator = require('./utils/ArtGenerator');
 const fs = require('fs');
 const path = require('path');
 

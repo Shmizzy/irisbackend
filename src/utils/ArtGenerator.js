@@ -323,4 +323,4 @@ class ArtGenerator {
   }
 }
 
-module.exports = new ArtGenerator(); // Ensure the correct export
+module.exports = ArtGenerator; 
