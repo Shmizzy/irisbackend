@@ -100,10 +100,26 @@ class ArtGenerator {
     this._updateStatus("drawing", "creation");
     const instructions = await aiService.generateDrawingInstructions(this.currentIdea);
     await this.broadcastInstructions(instructions);
-
-    // Wait for the frontend to complete drawing
-    await new Promise(resolve => setTimeout(resolve, 10000)); // Adjust the timeout as needed
-
+  
+    // Send individual points with delays for visualization
+    for (const element of instructions.elements) {
+      await new Promise(r => setTimeout(r, 500)); // Delay between elements
+      
+      for (const point of element.points) {
+        await sendEvent('drawing_progress', {
+          type: 'drawing_progress',
+          elementType: element.type,
+          point,
+          color: element.color,
+          strokeWidth: element.stroke_width
+        });
+        await new Promise(r => setTimeout(r, 100)); // Delay between points
+      }
+    }
+  
+    // Wait for frontend to complete drawing & save image
+    await new Promise(r => setTimeout(r, 2000)); // Give frontend time to finish
+  
     // Reflection Phase
     this._updateStatus("reflecting", "reflection");
     this.currentReflection = await aiService.generateReflection(this.currentIdea, instructions);
