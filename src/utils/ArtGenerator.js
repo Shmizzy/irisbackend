@@ -1,3 +1,4 @@
+// backend/src/utils/ArtGenerator.js
 const { LRUCache } = require('lru-cache');
 const { aiService } = require('../services/ai');
 const { storageService } = require('../services/storage');
@@ -81,12 +82,11 @@ class ArtGenerator {
 
     try {
       await this._generateArtworkPhases();
-      await this._saveAndCacheArtwork();
       this.failureCount = 0;
     } catch (error) {
       this._handleGenerationError(error);
       throw error;
-    }finally {
+    } finally {
       this.isProcessing = false;
     }
   }
@@ -192,7 +192,6 @@ class ArtGenerator {
       console.error('Error broadcasting reflection:', error);
     }
   }
-  
 
   _updateStatus(status, phase) {
     this.currentStatus = status;
@@ -264,32 +263,6 @@ class ArtGenerator {
     }
   }
 
- 
-
-  async sendCachedState(ws) {
-    try {
-      // Send most recent cached artwork
-      const cachedArtworks = Array.from(this.cache.keys())
-        .sort()
-        .slice(-5); // Get 5 most recent
-
-      for (const artworkId of cachedArtworks) {
-        const artwork = this.cache.get(artworkId);
-        if (artwork) {
-          await sendEvent('cached_artwork', {
-            type: 'cached_artwork',
-            ...artwork
-          });
-        }
-      }
-
-      // Send current state
-      await this.broadcastState();
-    } catch (error) {
-      console.error('Error sending cached state:', error);
-    }
-  }
-
   async broadcastPendingUpdates() {
     if (this.pendingUpdates.size === 0) return;
 
@@ -314,7 +287,6 @@ class ArtGenerator {
     this.pendingUpdates.add(update);
   }
 
-
   cleanup() {
     clearInterval(this.updateInterval);
     this.cache.reset();
@@ -323,4 +295,4 @@ class ArtGenerator {
   }
 }
 
-module.exports = ArtGenerator; 
+module.exports = ArtGenerator; // Ensure the correct export
