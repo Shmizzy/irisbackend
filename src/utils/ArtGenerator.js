@@ -3,6 +3,7 @@ const { aiService } = require('../services/ai');
 const { storageService } = require('../services/storage');
 const { sendEvent } = require('../kafka/producer');
 const { broadcast } = require('../routes/stream');
+const { saveImage } = require('./imageStorage');
 
 class ArtGenerator {
   constructor() {
@@ -95,6 +96,9 @@ class ArtGenerator {
     await this.broadcastInstructions(instructions);
 
     for (const element of instructions.elements) {
+      // Delay between elements
+      await new Promise(r => setTimeout(r, 500));
+      
       for (const point of element.points) {
         await sendEvent('drawing_progress', {
           type: 'drawing_progress',
@@ -103,8 +107,8 @@ class ArtGenerator {
           color: element.color,
           strokeWidth: element.stroke_width
         });
-        // Small delay for visual effect
-        await new Promise(r => setTimeout(r, 50));
+        // Larger delay between points for visualization
+        await new Promise(r => setTimeout(r, 100)); 
       }
     }
     
@@ -125,20 +129,26 @@ class ArtGenerator {
         throw new Error('No drawing instructions available');
       }
 
+      // Capture canvas as base64 image
+      const canvas = document.getElementById('zenithCanvas');
+      const base64Image = canvas.toDataURL('image/png');
+
+      // Save image
+      console.log('📸 Saving artwork image...');
+      const imageUrl = await saveImage(base64Image, `artwork-${Date.now()}`);
+
       // Save to database and get updated stats
       console.log('🗄️ Saving to database...');
       const { artwork: savedArtwork, stats } = await storageService.saveArtwork({
         drawingInstructions: this.currentDrawing.instructions,
         description: this.currentIdea,
-        reflection: this.currentReflection
+        reflection: this.currentReflection,
+        imageUrl // Add the image URL
       });
 
-      // Update local stats from database
+      // Update local stats
       this.totalCreations = stats.totalCreations;
       this.totalPixelsDrawn = stats.totalPixels;
-
-      console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
-      console.log(`📊 Stats: ${stats.totalCreations} total creations, ${stats.totalPixels} total pixels`);
 
       // Cache the artwork
       const artworkId = `artwork_${Date.now()}`;
@@ -146,11 +156,13 @@ class ArtGenerator {
         id: savedArtwork.id,
         idea: this.currentIdea,
         reflection: this.currentReflection,
-        instructions: this.currentDrawing.instructions
+        instructions: this.currentDrawing.instructions,
+        imageUrl // Include image URL in cache
       });
 
+      console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
+      console.log(`🖼️ Image saved at: ${imageUrl}`);
       this._updateStatus("completed", "completed");
-      console.log('🎨 Generation cycle complete!\n');
 
     } catch (error) {
       console.error('❌ Error saving artwork:', error);
@@ -158,6 +170,47 @@ class ArtGenerator {
       throw error;
     }
   }
+
+  async broadcastInstructions(instructions) {
+    console.log('📢 Broadcasting drawing instructions');
+    
+    this.currentDrawing = {
+      instructions,
+      timestamp: Date.now()
+    };
+
+    const message = {
+      type: 'drawing_instructions',
+      instructions
+    };
+
+    try {
+      await sendEvent('drawing_instructions', message);
+      broadcast(message);
+
+      console.log('📡Drawing Instructions brodcasted successfully');
+    } catch (error) {
+      console.error('Error broadcasting instructions:', error);
+    }
+  }
+
+  async broadcastReflection(reflection) {
+    console.log('📢 Broadcasting reflection');
+    const message = {
+      type: 'reflection',
+      reflection
+    };
+
+    try {
+      await sendEvent('reflection', message);
+      broadcast(message);
+
+      console.log('📡 Reflection brodcasted successfully');
+    } catch (error) {
+      console.error('Error broadcasting reflection:', error);
+    }
+  }
+  
 
   _updateStatus(status, phase) {
     this.currentStatus = status;
@@ -229,46 +282,7 @@ class ArtGenerator {
     }
   }
 
-  async broadcastInstructions(instructions) {
-    console.log('📢 Broadcasting drawing instructions');
-    
-    this.currentDrawing = {
-      instructions,
-      timestamp: Date.now()
-    };
-
-    const message = {
-      type: 'drawing_instructions',
-      instructions
-    };
-
-    try {
-      await sendEvent('drawing_instructions', message);
-      broadcast(message);
-
-      console.log('📡Drawing Instructions brodcasted successfully');
-    } catch (error) {
-      console.error('Error broadcasting instructions:', error);
-    }
-  }
-
-  async broadcastReflection(reflection) {
-    console.log('📢 Broadcasting reflection');
-    const message = {
-      type: 'reflection',
-      reflection
-    };
-
-    try {
-      await sendEvent('reflection', message);
-      broadcast(message);
-
-      console.log('📡 Reflection brodcasted successfully');
-    } catch (error) {
-      console.error('Error broadcasting reflection:', error);
-    }
-  }
-  
+ 
 
   async sendCachedState(ws) {
     try {

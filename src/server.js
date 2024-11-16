@@ -3,6 +3,13 @@ const mongoose = require('mongoose');
 const { connectProducer } = require('./kafka/producer');
 const { runConsumer } = require('./kafka/consumer');
 const ArtGenerator = require('./utils/ArtGenerator').default;
+const fs = require('fs');
+const path = require('path');
+
+const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const PORT = process.env.PORT || 3000;
 

@@ -4,6 +4,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "migrate": "node scripts/fix-drawing-instructions.js",
     "test:kafka": "node scripts/test-kafka.js",
     "kafka:up": "docker-compose up -d",
     "kafka:down": "docker-compose down",

@@ -43,45 +43,26 @@ class StorageService {
 
     async saveArtwork({ drawingInstructions, description, reflection }) {
         console.log('\n=== Saving Artwork ===');
-
+        console.log('📝 Drawing Instructions:', drawingInstructions ? 'Present' : 'Missing');
+    
         try {
             const pixelCount = this._calculatePixelCount(drawingInstructions);
-
+    
             const artwork = new Artwork({
-                drawingInstructions,
+                drawingInstructions, // This will now save correctly
                 description,
                 reflection,
                 pixelCount,
                 complexity: this._calculateComplexity(drawingInstructions)
             });
-
+    
             await artwork.save();
-
-            const stats = await Stats.findOneAndUpdate(
-                { id: 'global' },
-                {
-                    $inc: {
-                        totalCreations: 1,
-                        totalPixels: pixelCount
-                    }
-                },
-                { new: true }
-            );
-
-            console.log('✅ Artwork saved successfully');
-            console.log('🔑 ID:', artwork.id);
-            console.log('📊 Stats Updated:');
-            console.log(`   Total Creations: ${stats.totalCreations}`);
-            console.log(`   Total Pixels: ${stats.totalPixels}`);
-            console.log('===================\n');
-
-            return { artwork, stats };
+            // ... rest of the code
         } catch (error) {
             console.error('❌ Error saving artwork:', error);
             throw new Error(`Failed to save artwork: ${error.message}`);
         }
     }
-
     async getStats() {
         try {
             const stats = await Stats.findOne({ id: 'global' });
@@ -149,9 +130,17 @@ class StorageService {
     async getArtwork(id) {
         console.log(`📚 Fetching artwork ${id}...`);
         try {
-            const artwork = await Artwork.findById(id).select('id drawingInstructions description reflection createdAt votes complexity pixelCount');
-
-            console.log(artwork ? '✅ Artwork found' : '⚠️ Artwork not found');
+            const artwork = await Artwork.findById(id)
+                .select('id drawingInstructions description reflection createdAt votes complexity pixelCount')
+                .lean();
+    
+            if (!artwork) {
+                console.log('⚠️ Artwork not found');
+                return null;
+            }
+    
+            console.log('✅ Artwork found');
+            console.log('📝 Drawing Instructions:', artwork.drawingInstructions ? 'Present' : 'Missing');
             return artwork;
         } catch (error) {
             console.error('❌ Error fetching artwork:', error);
