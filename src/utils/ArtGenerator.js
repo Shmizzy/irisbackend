@@ -2,6 +2,7 @@ const { LRUCache } = require('lru-cache');
 const { aiService } = require('../services/ai');
 const { storageService } = require('../services/storage');
 const { sendEvent } = require('../kafka/producer');
+const { broadcast } = require('../routes/stream');
 
 class ArtGenerator {
   constructor() {
