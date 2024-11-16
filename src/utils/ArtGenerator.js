@@ -120,7 +120,7 @@ class ArtGenerator {
     await this.broadcastReflection(this.currentReflection);
   }
 
-  async _saveAndCacheArtwork() {
+  async _saveAndCacheArtwork(imageUrl) {
     try {
       this._updateStatus("saving", "storage");
       console.log('💾 Starting artwork storage process...');
@@ -129,35 +129,24 @@ class ArtGenerator {
         throw new Error('No drawing instructions available');
       }
 
-      // Capture canvas as base64 image
-      const canvas = document.getElementById('zenithCanvas');
-      const base64Image = canvas.toDataURL('image/png');
-
-      // Save image
-      console.log('📸 Saving artwork image...');
-      const imageUrl = await saveImage(base64Image, `artwork-${Date.now()}`);
-
-      // Save to database and get updated stats
       console.log('🗄️ Saving to database...');
       const { artwork: savedArtwork, stats } = await storageService.saveArtwork({
         drawingInstructions: this.currentDrawing.instructions,
         description: this.currentIdea,
         reflection: this.currentReflection,
-        imageUrl // Add the image URL
+        imageUrl
       });
 
-      // Update local stats
       this.totalCreations = stats.totalCreations;
       this.totalPixelsDrawn = stats.totalPixels;
 
-      // Cache the artwork
       const artworkId = `artwork_${Date.now()}`;
       this.cache.set(artworkId, {
         id: savedArtwork.id,
         idea: this.currentIdea,
         reflection: this.currentReflection,
         instructions: this.currentDrawing.instructions,
-        imageUrl // Include image URL in cache
+        imageUrl
       });
 
       console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
