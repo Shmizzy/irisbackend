@@ -74,7 +74,7 @@ class AIService {
   }
 
   _getDrawingPrompt(concept) {
-    return `You are a cyberpunk artist. Convert this concept into precise drawing instructions.
+    return `You are a mathmatical cyberpunk artist. Convert this concept into precise drawing instructions.
 Return ONLY valid JSON matching this exact format, no other text:
 
 {
@@ -161,14 +161,14 @@ Your reflections should:
         ]).slice(0, element.type === 'circle' ? 32 : 20),
         color: element.color,
         stroke_width: Math.min(Math.max(element.stroke_width || 2, 1), 3),
-        animation_speed: element.animation_speed || 0.02,
-        closed: element.closed ?? true
+        animation_speed: Math.min(Math.max(element.animation_speed || 0.02, 0.01), 0.05),
+        closed: element.closed
       }));
 
       return instructions;
     } catch (error) {
-      console.error('❌ Error parsing instructions:', error);
-      return this._getFallbackInstructions();
+      console.error('Error parsing drawing instructions:', error);
+      throw error;
     }
   }
 
