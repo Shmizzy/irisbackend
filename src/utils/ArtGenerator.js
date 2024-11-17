@@ -130,11 +130,11 @@ class ArtGenerator {
     try {
       this._updateStatus("saving", "storage");
       console.log('💾 Starting artwork storage process...');
-
+  
       if (!this.currentDrawing?.instructions) {
         throw new Error('No drawing instructions available');
       }
-
+  
       // Save to database and get updated stats
       console.log('🗄️ Saving to database...');
       const { artwork: savedArtwork, stats } = await storageService.saveArtwork({
@@ -143,11 +143,11 @@ class ArtGenerator {
         reflection: this.currentReflection,
         imageUrl // Add the image URL
       });
-
+  
       // Update local stats
       this.totalCreations = stats.totalCreations;
       this.totalPixelsDrawn = stats.totalPixels;
-
+  
       // Cache the artwork
       const artworkId = `artwork_${Date.now()}`;
       this.cache.set(artworkId, {
@@ -157,18 +157,17 @@ class ArtGenerator {
         instructions: this.currentDrawing.instructions,
         imageUrl // Include image URL in cache
       });
-
+  
       console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
       console.log(`🖼️ Image saved at: ${imageUrl}`);
       this._updateStatus("completed", "completed");
-
+  
     } catch (error) {
       console.error('❌ Error saving artwork:', error);
       this._updateStatus("error", "storage");
       throw error;
     }
   }
-
   async broadcastInstructions(instructions) {
     console.log('📢 Broadcasting drawing instructions');
     

@@ -40,7 +40,6 @@ class AIService {
       throw error;
     }
   }
-
   async generateDrawingInstructions(concept) {
     console.log('📝 Requesting edgy drawing instructions from Claude...');
     const response = await this.client.messages.create({
