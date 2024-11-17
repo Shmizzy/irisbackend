@@ -1,6 +1,7 @@
 // backend/src/routes/api.js
 const express = require('express');
 const { saveImage } = require('../utils/imageStorage');
+const { artGenerator } = require('../server'); // Import artGenerator
 const router = express.Router();
 
 router.post('/save-image', async (req, res) => {
@@ -17,7 +18,7 @@ router.post('/save-image', async (req, res) => {
 router.post('/artwork-complete', async (req, res) => {
   try {
     const { imageUrl } = req.body;
-    await artGenerator._saveAndCacheArtwork(imageUrl);
+    await artGenerator.saveAndCacheArtwork(imageUrl); // Use artGenerator
     res.json({ success: true });
   } catch (error) {
     console.error('Error completing artwork:', error);

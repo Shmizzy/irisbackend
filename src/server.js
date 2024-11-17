@@ -30,7 +30,6 @@ const startServer = async () => {
     console.log('✅ Kafka consumer started');
 
     // Initialize art generator
-    const artGenerator = new ArtGenerator();
     await artGenerator.initialize();
 
     // Start HTTP server
@@ -44,3 +43,5 @@ const startServer = async () => {
 };
 
 startServer().catch(console.error);
+
+module.exports = { artGenerator };
