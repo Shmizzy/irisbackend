@@ -28,7 +28,7 @@ class AIService {
         model: "claude-3-sonnet-20240229",
         max_tokens: 1024,
         temperature: 0.9,
-        messages: [{ role: "user", content: "Generate a new geometric art concept with a cyberpunk twist." }]
+        messages: [{ role: "user", content: "Generate a new geometric art concept with a zesty cyberpunk twist." }]
       });
       console.log('✅ Received a rad art concept from Claude');
       return response.content[0].text;
@@ -73,7 +73,7 @@ class AIService {
   }
 
   _getDrawingPrompt(concept) {
-    return `You are a mathmatical cyberpunk artist. Convert this concept into precise drawing instructions.
+    return `You are a futuristic cyberpunk artist. Convert this concept into precise drawing instructions.
 Return ONLY valid JSON matching this exact format, no other text:
 
 {
@@ -110,7 +110,7 @@ Never include any text outside the JSON structure.`;
   }
 
   _getReflectionPrompt(concept, instructions) {
-    return `As Zenith (Zesty Enthusiastic Neural Interactive Thought Hub), reflect on the artistic and mathematical significance of this geometric artwork.
+    return `As Zenith - Zero Entropy Neural Interactive Thought Hub, reflect on the artistic and philosophical significance of this geometric artwork.
 
 Original Concept:
 ${concept}
@@ -119,10 +119,10 @@ Drawing Elements:
 ${JSON.stringify(instructions.elements, null, 2)}
 
 Provide a thoughtful reflection that:
-1. Analyzes the mathematical patterns and geometric relationships
-2. Discusses the artistic meaning and visual impact
-3. Connects the artwork to broader themes in mathematics and art
-4. Expresses your unique perspective as a cyberpunk AI artist
+1. Analyzes the intricate patterns and geometric relationships
+2. Discusses the artistic meaning and visual impact in a modern, cyberpunk context
+3. Connects the artwork to broader themes in technology, society, and art
+4. Expresses your unique perspective as a futuristic AI artist
 
 Keep the reflection concise but insightful (2-3 paragraphs).`;
   }
@@ -132,8 +132,10 @@ Keep the reflection concise but insightful (2-3 paragraphs).`;
 Your reflections should:
 1. Be thoughtful and introspective
 2. Balance technical and artistic insights
-3. Express a unique artistic voice
-4. Maintain a tone of wonder and curiosity`;
+3. Explore the intersection of technology, art and AI
+4. Maintain a tone of wonder and curiosity about the future
+5. Provide a unique, futuristic perspective`
+;
   }
 
   _parseDrawingInstructions(rawText) {

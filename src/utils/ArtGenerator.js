@@ -4,7 +4,6 @@ const { aiService } = require('../services/ai');
 const { storageService } = require('../services/storage');
 const { sendEvent } = require('../kafka/producer');
 const { broadcast } = require('../routes/stream');
-const { saveImage } = require('./imageStorage');
 
 class ArtGenerator {
   constructor() {
@@ -95,15 +94,17 @@ class ArtGenerator {
     // Ideation Phase
     this._updateStatus("thinking", "ideation");
     this.currentIdea = await aiService.generateArtConcept();
+    await new Promise(r => setTimeout(r, 10000)); // Delay to simulate deep thinking
     
     // Creation Phase
     this._updateStatus("drawing", "creation");
     const instructions = await aiService.generateDrawingInstructions(this.currentIdea);
     await this.broadcastInstructions(instructions);
+    await new Promise(r => setTimeout(r, 10000)); // Delay to simulate contemplation before drawing
   
     // Send individual points with delays for visualization
     for (const element of instructions.elements) {
-      await new Promise(r => setTimeout(r, 500)); // Delay between elements
+      await new Promise(r => setTimeout(r, 2000)); // Delay between elements
       
       for (const point of element.points) {
         await sendEvent('drawing_progress', {
@@ -113,7 +114,7 @@ class ArtGenerator {
           color: element.color,
           strokeWidth: element.stroke_width
         });
-        await new Promise(r => setTimeout(r, 100)); // Delay between points
+        await new Promise(r => setTimeout(r, 500)); // Delay between points
       }
     }
   
@@ -124,6 +125,7 @@ class ArtGenerator {
     this._updateStatus("reflecting", "reflection");
     this.currentReflection = await aiService.generateReflection(this.currentIdea, instructions);
     await this.broadcastReflection(this.currentReflection);
+    await new Promise(r => setTimeout(r, 10000)); // Delay to simulate deep reflection
   }
 
   async saveAndCacheArtwork(imageUrl) {
@@ -161,6 +163,8 @@ class ArtGenerator {
       console.log(`✅ Artwork saved successfully! ID: ${savedArtwork.id}`);
       console.log(`🖼️ Image saved at: ${imageUrl}`);
       this._updateStatus("completed", "completed");
+
+      console.log('✅Generation cycle completed!')
   
     } catch (error) {
       console.error('❌ Error saving artwork:', error);

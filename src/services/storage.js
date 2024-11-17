@@ -41,7 +41,7 @@ class StorageService {
         console.log(`   Total Pixels: ${totalPixels[0]?.totalPixels || 0}`);
     }
 
-    async saveArtwork({ drawingInstructions, description, reflection, imageUrl }) {
+    async saveArtwork({ drawingInstructions, description, reflection }) {
         console.log('\n=== Saving Artwork ===');
         console.log('📝 Drawing Instructions:', drawingInstructions ? 'Present' : 'Missing');
     
@@ -52,7 +52,6 @@ class StorageService {
             drawingInstructions,
             description,
             reflection,
-            imageUrl, // Ensure imageUrl is saved here
             pixelCount,
             complexity: this._calculateComplexity(drawingInstructions)
           });
