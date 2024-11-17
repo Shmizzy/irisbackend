@@ -14,6 +14,8 @@ if (!fs.existsSync(uploadsDir)) {
 const PORT = process.env.PORT || 3000;
 
 console.log('API Key loaded:', process.env.ANTHROPIC_API_KEY ? '✅' : '❌');
+const artGenerator = new ArtGenerator(); 
+
 
 const startServer = async () => {
   try {
